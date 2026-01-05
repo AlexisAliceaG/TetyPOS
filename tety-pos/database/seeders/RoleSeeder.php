@@ -1,55 +1,58 @@
 <?php
 
-namespace Database\Seeders;
+use App\Http\Controllers\ProfileController;
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\BrandController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\SaleController;
+use App\Http\Controllers\SaleReportController;
+use App\Http\Controllers\ProductReportController;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Role;
-use Spatie\Permission\Models\Permission;
+Route::get('/', function () {
+    return redirect()->route('login');
+});
 
-class RoleSeeder extends Seeder
-{
-        /**
-         * Run the database seeds.
-         */
-        public function run(): void
-        {
-            $admin = Role::create(['name' => 'admin']);
-            $cajero = Role::create(['name' => 'cajero']);
+Route::get('/dashboard', function () {
+    return redirect()->route('sales.create');
+})->middleware(['auth', 'verified', 'role:admin|cajero'])->name('dashboard');
 
-            $permissions = [
-                'ver usuarios',
-                'crear usuarios',
-                'editar usuarios',
-                'eliminar usuarios',
+Route::middleware(['auth'])->group(function () {
+    
+    Route::middleware(['role:admin|cajero', 'can:crear ventas'])->group(function () {
+        Route::get('/ventas/crear', [SaleController::class, 'create'])->name('sales.create');    
+        Route::post('/ventas', [SaleController::class, 'store'])->name('sales.store');
+    });
 
-                'ver productos',
-                'crear productos',
-                'editar productos',
-                'eliminar productos',
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
 
-                'crear ventas',
-                'ver ventas',
-                'cancelar ventas',
+Route::middleware(['auth', 'role:admin'])->group(function () {
+    
+    Route::resource('users', UserController::class)->names('users')->middleware([
+        'index' => 'can:ver usuarios',
+        'create' => 'can:crear usuarios',
+        'edit' => 'can:editar usuarios',
+        'destroy' => 'can:eliminar usuarios'
+    ]);
 
-                'abrir caja',
-                'cerrar caja',
-                'ver reportes'
-            ];
+    Route::resource('products', ProductController::class)->middleware([
+        'index' => 'can:ver productos',
+        'create' => 'can:crear productos',
+        'edit' => 'can:editar productos',
+        'destroy' => 'can:eliminar productos'
+    ]);
+    
+    Route::resource('categories', CategoryController::class);
+    Route::resource('brands', BrandController::class);
+    
+    Route::middleware(['can:ver reportes'])->group(function () {
+        Route::get('/reporte-ventas', [SaleReportController::class, 'index'])->name('reports.sales');
+        Route::get('/reporte-productos', [ProductReportController::class, 'index'])->name('reports.products');
+    });
+});
 
-            foreach ($permissions as $permission) {
-                Permission::create(['name' => $permission]);
-            }
-
-
-            $admin->givePermissionTo(Permission::all());
-
-            $cajero->givePermissionTo([
-                'ver productos',
-                'crear ventas',
-                'ver ventas',
-                'abrir caja',
-                'cerrar caja',
-            ]);
-    }
-}
+require __DIR__.'/auth.php';

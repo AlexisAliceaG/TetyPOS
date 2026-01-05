@@ -15,21 +15,26 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', function () {
-    return view('dashboard');
+    return redirect()->route('sales.create');
 })->middleware(['auth', 'verified', 'role:admin|cajero'])->name('dashboard');
+
+Route::middleware(['auth', 'role:admin|cajero'])->group(function () {
+    Route::get('/ventas/crear', [SaleController::class, 'create'])->name('sales.create');    
+    Route::post('/ventas', [SaleController::class, 'store'])->name('sales.store');
+    
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
 
 Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::resource('users', UserController::class);
     Route::resource('products', ProductController::class);
     Route::resource('categories', CategoryController::class);
     Route::resource('brands', BrandController::class);
+    
     Route::get('/reporte-ventas', [SaleReportController::class, 'index'])->name('reports.sales');
     Route::get('/reporte-productos', [ProductReportController::class, 'index'])->name('reports.products');
-    Route::get('/ventas/crear', [SaleController::class, 'create'])->name('sales.create');    
-    Route::post('/ventas', [SaleController::class, 'store'])->name('sales.store');
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
 

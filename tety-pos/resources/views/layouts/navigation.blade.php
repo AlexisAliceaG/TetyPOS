@@ -4,14 +4,11 @@
             <div class="flex items-center">
                 <div class="shrink-0 flex items-center">
                     <a href="{{ route('dashboard') }}">
-                        <x-application-logo class="block h-9 w-auto fill-current text-gray-800" />
+                        <img src="{{ asset('images/logo.png') }}" alt="Logo" class="h-10 w-auto">
                     </a>
                 </div>
 
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex h-full items-center">
-                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                        🏠 {{ __('Dashboard') }}
-                    </x-nav-link>
 
                     @can('crear ventas')
                     <x-nav-link :href="route('sales.create')" :active="request()->routeIs('sales.create')">
@@ -104,14 +101,73 @@
                 </x-dropdown>
             </div>
             
-            <div class="-me-2 flex items-center sm:hidden">
-                <button @click="open = ! open" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out">
-                    <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
-                        <path :class="{'hidden': open, 'inline-flex': ! open }" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                        <path :class="{'hidden': ! open, 'inline-flex': open }" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
+            <div class="-me-2 flex items-center sm:hidden relative" x-data="{ open: false }">
+    <button @click="open = ! open" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out">
+        <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
+            <path :class="{'hidden': open, 'inline-flex': ! open }" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            <path :class="{'hidden': ! open, 'inline-flex': open }" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+    </button>
+        <div x-show="open" 
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0 scale-95"
+            x-transition:enter-end="opacity-100 scale-100"
+            x-transition:leave="transition ease-in duration-75"
+            x-transition:leave-start="opacity-100 scale-100"
+            x-transition:leave-end="opacity-0 scale-95"
+            @click.away="open = false"
+            class="absolute right-0 top-full mt-2 w-48 origin-top-right rounded-md shadow-lg z-50 bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 focus:outline-none" 
+            style="display: none;">
+            
+            <div class="py-1">
+                <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden bg-white border-t border-gray-200 shadow-lg">
+    <div class="pt-2 pb-3 space-y-1">
+        
+        @can('crear ventas')
+            <x-responsive-nav-link :href="route('sales.create')" :active="request()->routeIs('sales.create')">
+                🛒 {{ __('Caja') }}
+            </x-responsive-nav-link>
+        @endcan
+
+        @hasrole('admin')
+            <div class="border-t border-gray-100 mt-2 pt-2">
+                <div class="px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-widest">
+                    ⚙️ {{ __('Gestión') }}
+                </div>
+                <x-responsive-nav-link :href="route('products.index')" :active="request()->routeIs('products.*')">
+                    📦 {{ __('Inventario') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('categories.index')" :active="request()->routeIs('categories.*')">
+                    📂 {{ __('Categorías') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('brands.index')" :active="request()->routeIs('brands.*')">
+                    🏷️ {{ __('Marcas') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('users.index')" :active="request()->routeIs('users.*')">
+                    👥 {{ __('Usuarios') }}
+                </x-responsive-nav-link>
             </div>
+        @endhasrole
+
+        @can('ver reportes')
+            <div class="border-t border-gray-100 mt-2 pt-2">
+                <div class="px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-widest">
+                    📊 {{ __('Reportes') }}
+                </div>
+                <x-responsive-nav-link :href="route('reports.sales')" :active="request()->routeIs('reports.sales')">
+                    💵 {{ __('Ventas Diarias') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('reports.products')" :active="request()->routeIs('reports.products')">
+                    🏷️ {{ __('Lo más Vendido') }}
+                </x-responsive-nav-link>
+            </div>
+        @endcan
+
+    </div>
+</div>
+            </div>
+        </div>
+    </div>
         </div>
     </div>
 </nav>
