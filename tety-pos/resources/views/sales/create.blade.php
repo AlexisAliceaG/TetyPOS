@@ -3,6 +3,14 @@
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">Punto de Venta</h2>
     </x-slot>
 
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+    <style>
+        /* Ajuste estético para que combine con tu diseño Rosa */
+        .ts-control { border-radius: 0.5rem !important; padding: 0.5rem !important; border-color: #d1d5db !important; }
+        .ts-wrapper.focus .ts-control { border-color: #d13d7c !important; box-shadow: 0 0 0 1px #d13d7c !important; }
+        .ts-dropdown .active { background-color: #d13d7c !important; color: white !important; }
+    </style>
+
     <div id="notification-container" class="fixed top-5 right-5 z-50 flex flex-col gap-3 w-72 sm:w-96">
         @if(session('success'))
             <div class="notification-toast bg-green-600 text-white p-4 rounded-lg shadow-2xl flex justify-between items-center transform transition-all duration-500 ease-in-out">
@@ -13,21 +21,11 @@
                 <button onclick="this.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">&times;</button>
             </div>
         @endif
-
-        @if(session('error'))
-            <div class="notification-toast bg-red-600 text-white p-4 rounded-lg shadow-2xl flex justify-between items-center transform transition-all duration-500 ease-in-out">
-                <div class="flex items-center">
-                    <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                    <span class="font-bold">{{ session('error') }}</span>
-                </div>
-                <button onclick="this.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">&times;</button>
-            </div>
-        @endif
     </div>
 
     <div class="py-4 sm:py-6">
         <div class="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
-            <form action="{{ route('sales.store') }}" method="POST">
+            <form action="{{ route('sales.store') }}" method="POST" id="sale-form">
                 @csrf
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     
@@ -35,19 +33,17 @@
                         <div class="bg-white p-4 shadow sm:rounded-lg border-t-4 border-[#d13d7c]">
                             <x-input-label value="Buscar Producto" class="mb-1 text-gray-700 font-bold text-lg" />
                             <div class="flex flex-col sm:flex-row gap-2">
-                                <select id="product_selector" class="w-full border-gray-300 rounded-md shadow-sm focus:ring-[#d13d7c] focus:border-[#d13d7c] text-sm text-gray-600">
+                                <select id="product_selector" class="w-full" placeholder="Teclee nombre del producto...">
                                     <option value="">Seleccione un producto...</option>
                                     @foreach($products as $product)
                                         <option value="{{ $product->id }}" 
                                                 data-price="{{ $product->selling_price }}" 
-                                                data-stock="{{ $product->stock }}">
+                                                data-stock="{{ $product->stock }}"
+                                                data-name="{{ $product->name }}">
                                             {{ $product->name }} (${{ number_format($product->selling_price, 2) }})
                                         </option>
                                     @endforeach
                                 </select>
-                                <button type="button" onclick="addProductRow()" class="w-full sm:w-auto bg-[#d13d7c] hover:bg-[#b03368] text-white px-6 py-3 sm:py-2 rounded-md font-black transition uppercase text-sm shadow-md">
-                                    + Añadir
-                                </button>
                             </div>
                         </div>
 
@@ -105,72 +101,94 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+
     <script>
-        // Lógica de notificaciones
+        let productSearch;
+
         document.addEventListener('DOMContentLoaded', function() {
+            // Inicializar el Buscador con Filtrado
+            productSearch = new TomSelect("#product_selector", {
+                create: false,
+                maxOptions: 10,
+                onItemAdd: function(value) {
+                    // Cuando se selecciona un producto, obtener sus datos y añadir fila
+                    const data = this.options[value];
+                    addProductRow(data);
+                    this.clear(); // Limpiar buscador
+                    this.focus(); // Volver a poner el cursor para el siguiente producto
+                }
+            });
+
+            // Notificaciones
             const toasts = document.querySelectorAll('.notification-toast');
             toasts.forEach(toast => {
                 setTimeout(() => {
                     toast.style.opacity = '0';
-                    toast.style.transform = 'translateX(20px)';
                     setTimeout(() => toast.remove(), 500);
                 }, 5000);
             });
         });
 
-        // Funciones del POS (Añadir, Calcular, Actualizar)
-        function addProductRow() {
-            const select = document.getElementById('product_selector');
-            const productId = select.value;
-            const option = select.options[select.selectedIndex];
-            
-            if (!productId) return;
+        function addProductRow(data) {
+            if (!data || !data.value) return;
 
-            const price = parseFloat(option.getAttribute('data-price')) || 0;
-            const stock = parseInt(option.getAttribute('data-stock')) || 0;
-            const name = option.text.split(' ($')[0];
+            const productId = data.value;
+            const price = parseFloat(data.price) || 0;
+            const stock = parseInt(data.stock) || 0;
+            const name = data.name;
 
-            if (document.getElementById(`row-${productId}`)) {
-                alert("Este producto ya está en la lista.");
+            // Si ya existe en la tabla, solo subir cantidad
+            const existingRow = document.getElementById(`row-${productId}`);
+            if (existingRow) {
+                const qtyInput = existingRow.querySelector('input[type="number"]');
+                if (parseInt(qtyInput.value) < stock) {
+                    qtyInput.value = parseInt(qtyInput.value) + 1;
+                    updateRow(qtyInput, price);
+                } else {
+                    alert("Stock máximo alcanzado");
+                }
                 return;
             }
 
             const emptyMsg = document.getElementById('empty-cart-msg');
             if(emptyMsg) emptyMsg.remove();
 
+            const container = document.getElementById('sale-items-container');
             const div = document.createElement('div');
             div.id = `row-${productId}`;
             div.className = "flex flex-col sm:grid sm:grid-cols-12 gap-4 px-4 py-4 sm:items-center hover:bg-gray-50 transition bg-white";
             div.innerHTML = `
                 <div class="sm:col-span-5">
                     <p class="text-sm font-bold text-gray-800 uppercase">${name}</p>
-                    <p class="text-xs text-gray-500 sm:hidden">Precio Unit: $${price.toFixed(2)}</p>
                     <input type="hidden" name="items[${productId}][product_id]" value="${productId}">
                 </div>
                 
                 <div class="sm:col-span-3 flex items-center justify-between sm:justify-center gap-2">
-                    <span class="text-xs font-bold text-gray-400 sm:hidden uppercase">Cant:</span>
                     <input type="number" name="items[${productId}][quantity]" value="1" min="1" max="${stock}" 
                         oninput="updateRow(this, ${price})" 
-                        class="w-20 text-center border-gray-300 rounded-md focus:ring-[#d13d7c] font-bold text-lg sm:text-base">
+                        class="w-20 text-center border-gray-300 rounded-md focus:ring-[#d13d7c] font-bold text-lg">
                 </div>
 
                 <div class="sm:col-span-2 text-right">
-                    <span class="text-xs font-bold text-gray-400 sm:hidden uppercase block">Subtotal</span>
                     <span class="text-lg sm:text-sm font-black text-gray-900">$<span class="subtotal-span">${price.toFixed(2)}</span></span>
                 </div>
 
                 <div class="sm:col-span-2 text-right">
-                    <button type="button" onclick="this.closest('#row-${productId}').remove(); calculateTotal(); checkEmpty();" 
-                            class="w-full sm:w-auto bg-red-50 sm:bg-transparent text-red-500 hover:text-red-700 py-2 sm:py-0 rounded font-bold text-sm sm:text-2xl transition">
-                        <span class="sm:hidden text-xs uppercase">Eliminar</span>
-                        <span class="hidden sm:block">&times;</span>
+                    <button type="button" onclick="removeRow('${productId}')" 
+                            class="text-red-500 hover:text-red-700 font-bold text-2xl transition">
+                        &times;
                     </button>
                 </div>
             `;
-            document.getElementById('sale-items-container').appendChild(div);
+            container.prepend(div); // Agrega al inicio de la lista
             calculateTotal();
-            select.value = "";
+        }
+
+        function removeRow(id) {
+            document.getElementById(`row-${id}`).remove();
+            calculateTotal();
+            checkEmpty();
         }
 
         function checkEmpty() {
@@ -201,7 +219,7 @@
             const total = parseFloat(document.getElementById('total-hidden').value) || 0;
             const cash = parseFloat(document.getElementById('cash_received').value) || 0;
             const change = cash - total;
-            const displayValue = change > 0 ? change.toFixed(2) : "0.00";
+            const displayValue = (change > 0 && total > 0) ? change.toFixed(2) : "0.00";
             document.getElementById('change-display').innerText = displayValue;
             document.getElementById('change-hidden').value = change > 0 ? change.toFixed(2) : 0;
         }
