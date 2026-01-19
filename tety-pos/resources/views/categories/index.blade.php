@@ -13,10 +13,36 @@
     <div class="py-6 sm:py-12 bg-gray-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             
-            @if (session('success'))
-                <div class="mb-6 bg-green-500 text-white px-6 py-4 rounded-xl shadow-lg font-bold flex items-center" role="alert">
-                    <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+            @if(session('success'))
+                <div id="alert"
+                    class="fixed top-5 right-5 bg-green-100 text-green-700 px-6 py-3 rounded-xl shadow-lg font-bold flex items-center z-50">
+                    <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
                     {{ session('success') }}
+                </div>
+            @endif
+
+            @if(session('error'))
+                <div id="alert"
+                    class="fixed top-5 right-5 bg-red-100 text-red-700 px-6 py-3 rounded-xl shadow-lg font-bold flex items-center z-50">
+                    <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
+                    {{ session('error') }}
+                </div>
+            @endif
+
+            @if ($errors->any())
+                <div id="alert"
+                    class="fixed top-5 right-5 bg-red-100 text-red-700 px-6 py-4 rounded-xl shadow-lg font-bold z-50">
+                    <strong>⚠️ Atención: Revisa los campos</strong>
+                    <ul class="mt-2 list-disc list-inside text-sm font-normal">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
                 </div>
             @endif
 
@@ -115,3 +141,15 @@
         </div>
     </div>
 </x-app-layout>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const alertBox = document.getElementById("alert");
+        if (alertBox) {
+            setTimeout(() => {
+                alertBox.style.transition = "opacity 0.5s ease";
+                alertBox.style.opacity = "0";
+                setTimeout(() => alertBox.remove(), 500);
+            }, 4000); 
+        }
+    });
+</script>

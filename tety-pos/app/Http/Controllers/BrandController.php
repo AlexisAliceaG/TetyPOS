@@ -30,14 +30,13 @@ class BrandController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:brands,name',
-        ]);
-
-        Brand::create($validated);
-
-        return redirect()->route('brands.index')
-            ->with('success', 'Marca creada exitosamente.');
+        $validated = $request->validate(['name' => 'required|string|max:255|unique:brands,name',]);
+        try {
+            Brand::create($validated);
+            return redirect()->route('brands.index')->with('success', 'Marca creada exitosamente ✅');
+        } catch (\Exception $e) {
+            return back()->withInput()->with('error', '❌ No se pudo crear la marca. Intenta nuevamente.');
+        }
     }
 
     /**

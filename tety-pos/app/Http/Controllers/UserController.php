@@ -6,7 +6,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
-use Spatie\Permission\Models\Permission; 
+use Spatie\Permission\Models\Permission;
 
 class UserController extends Controller
 {
@@ -33,19 +33,25 @@ class UserController extends Controller
             'permissions' => 'nullable|array',
         ]);
 
-        $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-        ]);
+        try {
+            $user = User::create([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'password' => Hash::make($validated['password']),
+            ]);
 
-        $user->assignRole($validated['role']);
-        
-        if ($request->has('permissions')) {
-            $user->givePermissionTo($request->permissions);
+            $user->assignRole($validated['role']);
+
+            if ($request->has('permissions')) {
+                $user->givePermissionTo($request->permissions);
+            }
+
+            return redirect()->route('users.index')
+                ->with('success', '✅ Usuario creado correctamente.');
+        } catch (\Exception $e) {
+            return back()->withInput()
+                ->with('error', '❌ No se pudo crear el usuario. Intenta nuevamente.');
         }
-
-        return redirect()->route('users.index')->with('success', 'Usuario creado correctamente.');
     }
 
     public function edit(User $user)

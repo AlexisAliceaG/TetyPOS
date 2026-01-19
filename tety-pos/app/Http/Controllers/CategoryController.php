@@ -35,12 +35,16 @@ class CategoryController extends Controller
             'name' => 'required|string|max:255|unique:categories,name',
         ]);
 
-        // El slug se genera automáticamente en el Modelo (método boot)
-        Category::create($validated);
+        try {
+            Category::create($validated);
 
-        return redirect()->route('categories.index')
-            ->with('success', 'Categoría creada exitosamente.');
+            return redirect()->route('categories.index')
+                ->with('success', 'Categoría creada exitosamente ✅');
+        } catch (\Exception $e) {
+            return back()->withInput()->with('error', '❌ No se pudo crear la categoría. Intenta nuevamente.');
+        }
     }
+
 
     /**
      * Muestra el formulario de edición.

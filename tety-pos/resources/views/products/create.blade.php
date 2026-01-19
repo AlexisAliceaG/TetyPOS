@@ -9,6 +9,31 @@
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="bg-white p-8 shadow-2xl sm:rounded-3xl border border-gray-100 relative overflow-hidden">
                 <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-[#d13d7c] to-[#b03368]"></div>
+                @if(session('success'))
+                    <div id="alert" 
+                        class="fixed top-5 right-5 bg-green-100 text-green-700 px-6 py-3 rounded-xl shadow-lg font-bold z-50">
+                        {{ session('success') }}
+                    </div>
+                @endif
+
+                @if(session('error'))
+                    <div id="alert" 
+                        class="fixed top-5 right-5 bg-red-100 text-red-700 px-6 py-3 rounded-xl shadow-lg font-bold z-50">
+                        {{ session('error') }}
+                    </div>
+                @endif
+
+                @if ($errors->any())
+                    <div id="alert" 
+                        class="fixed top-5 right-5 bg-red-100 text-red-700 px-6 py-3 rounded-xl shadow-lg font-bold z-50">
+                        <strong>⚠️ Hubo algunos problemas:</strong>
+                        <ul class="mt-2 list-disc list-inside text-sm font-normal">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
 
                 <form method="POST" action="{{ route('products.store') }}">
                     @csrf
@@ -25,14 +50,6 @@
                                 class="mt-1 block w-full border-gray-200 focus:border-[#d13d7c] focus:ring-[#d13d7c] rounded-xl shadow-sm text-sm sm:text-base transition" 
                                 placeholder="Ej: Laptop Pro 14" required />
                         </div>
-
-                        <div>
-                            <x-input-label for="sku" value="SKU / Código Único" class="font-bold text-gray-700" />
-                            <x-text-input id="sku" name="sku" type="text" 
-                                class="mt-1 block w-full border-gray-200 focus:border-[#d13d7c] focus:ring-[#d13d7c] rounded-xl shadow-sm text-sm sm:text-base transition uppercase" 
-                                placeholder="COD-001" required />
-                        </div>
-
                         <div>
                             <x-input-label for="category_id" value="Categoría" class="font-bold text-gray-700" />
                             <select name="category_id" 
@@ -112,3 +129,15 @@
         </div>
     </div>
 </x-app-layout>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const alertBox = document.getElementById("alert");
+        if (alertBox) {
+            setTimeout(() => {
+                alertBox.style.transition = "opacity 0.5s ease";
+                alertBox.style.opacity = "0";
+                setTimeout(() => alertBox.remove(), 500); 
+            }, 4000);
+        }
+    });
+</script>

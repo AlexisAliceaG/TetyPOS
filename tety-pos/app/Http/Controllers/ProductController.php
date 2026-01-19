@@ -36,22 +36,24 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'name'           => 'required|string|max:255',
-            'sku'            => 'required|string|unique:products,sku',
-            'category_id'    => 'required|exists:categories,id',
-            'brand_id'       => 'nullable|exists:brands,id',
-            'cost_price'     => 'required|numeric|min:0',
-            'selling_price'  => 'required|numeric|min:0',
-            'stock'          => 'required|integer|min:0',
-            'alert_quantity' => 'required|integer|min:0',
-        ]);
+        $request->validate([ 'name' => 'required|string|max:255', 
+                            'sku' => 'nullable|string|unique:products,sku', 
+                            'category_id' => 'required|exists:categories,id', 
+                            'brand_id' => 'nullable|exists:brands,id', 
+                            'cost_price' => 'required|numeric|min:0', 
+                            'selling_price' => 'required|numeric|min:0', 
+                            'stock' => 'required|integer|min:0', '
+                            alert_quantity' => 'integer|min:0', ]);
+        try {
+            Product::create($request->all());
 
-        Product::create($request->all());
-
-        return redirect()->route('products.index')
-            ->with('success', 'Producto creado exitosamente.');
+            return redirect()->route('products.index')
+                ->with('success', 'Producto creado exitosamente ✅');
+        } catch (\Exception $e) {
+            return back()->withInput()->with('error', '❌ No se pudo guardar el producto. Intenta nuevamente.');
+        }
     }
+
 
     /**
      * Muestra un producto específico (opcional para un POS, pero útil).
